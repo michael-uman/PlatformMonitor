@@ -32,11 +32,16 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+typedef struct {
+	uint32_t count;
+	uint32_t data;
+} MSGQUEUE_OBJ_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-volatile int counter = 0;
+//volatile int counter = 0;
 
 /* USER CODE END PD */
 
@@ -51,6 +56,8 @@ UART_HandleTypeDef huart2;
 osThreadId_t flashTaskHandle;
 osThreadId_t uartTaskHandle;
 /* USER CODE BEGIN PV */
+
+osMessageQueueId_t msgQueue = 0;
 
 /* USER CODE END PV */
 
@@ -802,6 +809,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
 
+  msgQueue = osMessageQueueNew(16, sizeof(MSGQUEUE_OBJ_t), NULL);
+
   print2Uart2("Initializing threads...\n");
 
   /* USER CODE END RTOS_QUEUES */
@@ -969,12 +978,21 @@ void startFlashTask(void *argument)
 {
 
   /* USER CODE BEGIN 5 */
+	static uint32_t counter = 0;
+
+	MSGQUEUE_OBJ_t msg = {0};
+
   /* Infinite loop */
   for(;;)
   {
+	  int button = (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0)?1:0;
 	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-      //osDelay(10);
-	  vTaskDelay(500 / portTICK_PERIOD_MS);
+
+	  msg.count = counter;
+	  msg.data  = button;
+
+	  osMessageQueuePut(msgQueue, &msg, 0, 0);
+	  vTaskDelay(250 / portTICK_PERIOD_MS);
 	  counter++;
   }
   /* USER CODE END 5 */ 
@@ -991,16 +1009,18 @@ void startUartTask(void *argument)
 {
 
   /* USER CODE BEGIN startUartTask */
-  /* Infinite loop */
+  MSGQUEUE_OBJ_t msg = {0};
+
+	/* Infinite loop */
 //  static char msgBuffer[128];
   for(;;)
   {
-	snprintf(msgBuffer, sizeof(msgBuffer), "Buffer (%04d)\n", counter);
-//	snprintf(msgBuffer, sizeof(msgBuffer) - 1, "Buffer (%04d)\n", counter);
-//	HAL_UART_Transmit_IT(&huart2, (uint8_t*)msgBuffer, strlen(msgBuffer));
-//	osDelay(100);
-	print2Uart2(msgBuffer);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+	  osStatus_t status;
+	  status = osMessageQueueGet(msgQueue, &msg, NULL, 0);
+	  if (status == osOK) {
+		  snprintf(msgBuffer, sizeof(msgBuffer), "Buffer (%04ld) (%ld)\n", msg.count, msg.data);
+		  print2Uart2(msgBuffer);
+	  }
   }
   /* USER CODE END startUartTask */
 }
@@ -1056,3 +1076,4 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
