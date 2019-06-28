@@ -5,6 +5,13 @@
 #include <QJsonDocument>
 #include "portmonitor.h"
 
+#if defined(linux)
+#define COMPORT "/dev/ttyACM0"
+#elif defined(win32)
+#define COMPORT "COM5"
+#endif
+
+
 #if 0
 static void enumerate_serial_ports()
 {
@@ -18,7 +25,7 @@ static void enumerate_serial_ports()
 
 PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
 {
-    serial_port = new QSerialPort("COM5");
+    serial_port = new QSerialPort(COMPORT);
     serial_port->setBaudRate(115200);
     serial_port->setDataBits(QSerialPort::Data8);
     serial_port->setStopBits(QSerialPort::OneStop);

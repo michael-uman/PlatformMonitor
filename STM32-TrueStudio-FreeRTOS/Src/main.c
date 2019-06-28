@@ -348,7 +348,7 @@ void startUartTask(void *argument)
 	  osStatus_t status;
 	  status = osMessageQueueGet(msgQueue, &msg, NULL, 0);
 	  if (status == osOK) {
-		  snprintf(msgBuffer, sizeof(msgBuffer), "Buffer (%04ld) (%ld)\n", msg.count, msg.data);
+		  snprintf(msgBuffer, sizeof(msgBuffer), "{ \"id\": %ld, \"button\": %ld }\n", msg.count, msg.data);
 		  print2Uart2(msgBuffer);
 	  }
   }
