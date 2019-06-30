@@ -1,7 +1,8 @@
 #MicroXplorer Configuration settings - do not modify
 FREERTOS.FootprintOK=true
-FREERTOS.IPParameters=Tasks01,FootprintOK
-FREERTOS.Tasks01=flashTask,24,128,startFlashTask,Default,NULL,Dynamic,NULL,NULL;uartTask,8,128,startUartTask,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.IPParameters=Tasks01,FootprintOK,Queues01
+FREERTOS.Queues01=sendQueue,16,SENDMSGQUEUE_OBJ_t,0,Static,sendQueueBuffer,sendQueueControlBlock;recvQueue,16,RECVMSGQUEUE_OBJ_t,0,Static,recvQueueBuffer,recvQueueControlBlock
+FREERTOS.Tasks01=flashTask,24,256,startFlashTask,Default,NULL,Dynamic,NULL,NULL;uartTask,8,256,startUartTask,Default,NULL,Dynamic,NULL,NULL;recvTask,8,256,startRecvTask,Default,NULL,Dynamic,NULL,NULL
 File.Version=6
 KeepUserPlacement=true
 Mcu.Family=STM32F4
@@ -101,7 +102,7 @@ PH1-OSC_OUT.Locked=true
 PH1-OSC_OUT.Mode=HSE-External-Oscillator
 PH1-OSC_OUT.Signal=RCC_OSC_OUT
 PinOutPanel.RotationAngle=0
-ProjectManager.AskForMigrate=true
+ProjectManager.AskForMigrate=false
 ProjectManager.BackupPrevious=false
 ProjectManager.CompilerOptimize=6
 ProjectManager.ComputerToolchain=false
