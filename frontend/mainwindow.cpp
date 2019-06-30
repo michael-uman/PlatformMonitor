@@ -34,6 +34,7 @@ void MainWindow::onMessageRecv(QJsonDocument &doc)
         if (obj.contains("version")) {
             sText = obj["version"].toString();
             qDebug() << "Version : " << sText;
+            ui->msgFWVersion->setText(sText);
         } else if (obj.contains("message")) {
             sText = obj["message"].toString();
             qDebug() << "DEVICE MSG : " << sText;
@@ -51,7 +52,9 @@ void MainWindow::onMessageRecv(QJsonDocument &doc)
             sText = QString::asprintf("%s", (led == 1)?"On":"Off");
             ui->msgLEDLabel->setText(sText);
 
-//            qDebug() << "ID : " << id << " BUTTON : " << button;
+            // update button enable according to LED status
+            ui->LedOnButton->setEnabled(led == 0);
+            ui->LedOffButton->setEnabled(led == 1);
         } else {
             qDebug() << "Looks like invalid JSON to me!";
         }

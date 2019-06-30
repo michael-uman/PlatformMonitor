@@ -3,6 +3,7 @@
 #include <QList>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QTimer>
 #include "portmonitor.h"
 #include "commands.h"
 
@@ -32,6 +33,8 @@ PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
     }
 
     connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
+    // Wait 1/2 second and send a get version packet...
+    QTimer::singleShot(500, this, &PortMonitor::GetVersion);
 }
 
 void PortMonitor::onDataReady()
