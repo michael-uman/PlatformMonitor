@@ -27,18 +27,30 @@ void MainWindow::onMessageRecv(QJsonDocument &doc)
 {
     // Verify that we were passed a valid JSON object...
     if (doc.isObject()) {
+        QString sText;
         QJsonObject obj = doc.object();
 
         // Does it contain the keys we need?
-        if (obj.contains("id") && obj.contains("button")) {
-            QString sText;
+        if (obj.contains("version")) {
+            sText = obj["version"].toString();
+            qDebug() << "Version : " << sText;
+        } else if (obj.contains("message")) {
+            sText = obj["message"].toString();
+            qDebug() << "DEVICE MSG : " << sText;
+        } else if (obj.contains("id") &&
+                   obj.contains("button") &&
+                   obj.contains("led")) {
             int     id     = obj["id"].toInt();
             int     button = obj["button"].toInt();
+            int     led    = obj["led"].toInt();
 
             sText = QString::asprintf("%d", id);
             ui->msgIDLabel->setText(sText);
             sText = QString::asprintf("%s", (button == 1)?"Pressed":"Open");
             ui->msgButtonLabel->setText(sText);
+            sText = QString::asprintf("%s", (led == 1)?"On":"Off");
+            ui->msgLEDLabel->setText(sText);
+
 //            qDebug() << "ID : " << id << " BUTTON : " << button;
         } else {
             qDebug() << "Looks like invalid JSON to me!";
@@ -49,3 +61,18 @@ void MainWindow::onMessageRecv(QJsonDocument &doc)
     }
 }
 
+
+void MainWindow::on_LedOnButton_clicked()
+{
+    port_monitor->TurnLEDOn(1);
+}
+
+void MainWindow::on_LedOffButton_clicked()
+{
+    port_monitor->TurnLEDOff(1);
+}
+
+void MainWindow::on_versionButton_clicked()
+{
+    port_monitor->GetVersion();
+}

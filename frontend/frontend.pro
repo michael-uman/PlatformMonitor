@@ -24,6 +24,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
+INCLUDEPATH += \
+    ../STM32-TrueStudio-FreeRTOS/Src
+
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
@@ -35,6 +38,7 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

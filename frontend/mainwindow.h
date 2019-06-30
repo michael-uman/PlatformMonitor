@@ -21,6 +21,13 @@ public:
 public slots:
     void onMessageRecv(QJsonDocument & doc);
 
+private slots:
+    void on_LedOnButton_clicked();
+
+    void on_LedOffButton_clicked();
+
+    void on_versionButton_clicked();
+
 private:
     Ui::MainWindow *    ui              = nullptr;
     PortMonitor *       port_monitor    = nullptr;
