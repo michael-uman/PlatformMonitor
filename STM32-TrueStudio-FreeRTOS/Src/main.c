@@ -131,6 +131,97 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		// TODO: Should handle error condition here...
 	}
 }
+
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  /* Alarm generation: Turn LED1 on */
+//  BSP_LED_On(LED1);
+	HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_SET);
+}
+
+#if 0
+
+/**
+  * @brief  Configure the current time and date.
+  * @param  None
+  * @retval None
+  */
+static void RTC_AlarmConfig(void)
+{
+//  RTC_DateTypeDef  sdatestructure;
+//  RTC_TimeTypeDef  stimestructure;
+  RTC_AlarmTypeDef salarmstructure;
+
+  /*##-1- Configure the RTC Alarm peripheral #################################*/
+  /* Set Alarm to 02:20:30
+     RTC Alarm Generation: Alarm on Hours, Minutes and Seconds */
+  salarmstructure.Alarm = RTC_ALARM_A;
+  salarmstructure.AlarmDateWeekDay = RTC_WEEKDAY_MONDAY;
+  salarmstructure.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  salarmstructure.AlarmMask =  RTC_ALARMMASK_SECONDS; //RTC_ALARMMASK_DATEWEEKDAY;
+  salarmstructure.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_None;
+  salarmstructure.AlarmTime.TimeFormat = RTC_HOURFORMAT12_AM;
+  salarmstructure.AlarmTime.Hours = 0x0;
+  salarmstructure.AlarmTime.Minutes = 0x0;
+  salarmstructure.AlarmTime.Seconds = 0x10;
+  salarmstructure.AlarmTime.SubSeconds = 0x00;
+
+  if(HAL_RTC_SetAlarm_IT(&hrtc,&salarmstructure,FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+//  /*##-2- Configure the Date #################################################*/
+//  /* Set Date: Tuesday February 18th 2014 */
+//  sdatestructure.Year 		= 0x14;
+//  sdatestructure.Month 		= RTC_MONTH_FEBRUARY;
+//  sdatestructure.Date 		= 0x18;
+//  sdatestructure.WeekDay 	= RTC_WEEKDAY_TUESDAY;
+//
+//  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,FORMAT_BCD) != HAL_OK)
+//  {
+//    /* Initialization Error */
+//    Error_Handler();
+//  }
+//
+//  /*##-3- Configure the Time #################################################*/
+//  /* Set Time: 02:20:00 */
+//  stimestructure.Hours = 0x02;
+//  stimestructure.Minutes = 0x20;
+//  stimestructure.Seconds = 0x00;
+//  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
+//  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
+//  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
+//
+//  if(HAL_RTC_SetTime(&hrtc,&stimestructure,FORMAT_BCD) != HAL_OK)
+//  {
+//    /* Initialization Error */
+//    Error_Handler();
+//  }
+}
+
+/**
+  * @brief  Display the current time.
+  * @param  showtime : pointer to buffer
+  * @retval None
+  */
+static void RTC_TimeShow(uint8_t* showtime)
+{
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;
+
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, FORMAT_BIN);
+  /* Display time Format : hh:mm:ss */
+  snprintf((char*)showtime,128, "{ \"message\": \"%02d:%02d:%02d\" }\n",
+		  stimestructureget.Hours, stimestructureget.Minutes,
+		  stimestructureget.Seconds);
+}
+#endif // 0
+
 /* USER CODE END 0 */
 
 /**
@@ -224,7 +315,7 @@ int main(void)
   const osThreadAttr_t uartTask_attributes = {
     .name = "uartTask",
     .priority = (osPriority_t) osPriorityLow,
-    .stack_size = 256
+    .stack_size = 512
   };
   uartTaskHandle = osThreadNew(startUartTask, NULL, &uartTask_attributes);
 
@@ -325,6 +416,7 @@ static void MX_RTC_Init(void)
 
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -367,6 +459,26 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
+
+#if 0
+  /** Enable the Alarm A 
+  */
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Seconds = 0x15;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
@@ -473,8 +585,8 @@ void startFlashTask(void *argument)
 		int button = (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == 0) ? 1 : 0;
 //	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-		msg.cmd = SENDCMD_STATUS;
-		msg.count = counter;
+		msg.cmd 		= SENDCMD_STATUS;
+		msg.count 		= counter;
 		msg.buttonState = button;
 
 		osMessageQueuePut(sendQueueHandle, &msg, 0, 0);
@@ -505,14 +617,22 @@ void startUartTask(void *argument)
 			osMutexAcquire(appContext.contextMutex, 0);
 			switch (msg.cmd) {
 			case SENDCMD_STATUS: {
-				uint32_t ledMask = ((appContext.led4 << 3) | (appContext.led3 << 2) | (appContext.led2 << 1) | (appContext.led1 << 0));
+				RTC_TimeTypeDef stimestructureget;
+				RTC_DateTypeDef sdatestructureget;
+
+				/* Get the RTC current Time */
+                 HAL_RTC_GetTime(&hrtc, &stimestructureget, FORMAT_BCD);
+                 HAL_RTC_GetDate(&hrtc, &sdatestructureget, FORMAT_BCD);
+
+                uint32_t ledMask = ((appContext.led4 << 3) | (appContext.led3 << 2) | (appContext.led2 << 1) | (appContext.led1 << 0));
 
 				appContext.counter = msg.count;
 				appContext.but1 = (msg.buttonState & 0x1) ? 1 : 0;
 
 				snprintf(msgBuffer, sizeof(msgBuffer),
-						"{ \"id\": %ld, \"button\": %d, \"led\": %ld }\n",
-						appContext.counter, appContext.but1, ledMask);
+						"{ \"id\": %ld, \"button\": %d, \"led\": %ld, \"timestamp\": \"%02x:%02x:%02x\" }\n",
+						appContext.counter, appContext.but1, ledMask,
+						stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
 				print2Uart2(msgBuffer);
 			}
 				break;
