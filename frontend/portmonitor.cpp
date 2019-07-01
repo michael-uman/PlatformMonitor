@@ -37,7 +37,7 @@ PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
     if (ok) {
         connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
         // Wait 1/2 second and send a get version packet...
-        QTimer::singleShot(500, this, &PortMonitor::GetVersion);
+        QTimer::singleShot(1500, this, &PortMonitor::GetVersion);
     }
 }
 
@@ -78,20 +78,21 @@ void PortMonitor::parseJSON(QByteArray &buffer)
 
     if (obj.contains("version")) {
         sText = obj["version"].toString();
-        qDebug() << "Version : " << sText;
         if (sText != version) {
             version = sText;
             emit versionChanged(version);
         }
     } else if (obj.contains("message")) {
-        sText = obj["message"].toString();
-        qDebug() << "DEVICE MSG : " << sText;
+        deviceMsg = obj["message"].toString();
+        emit deviceMsgChanged(deviceMsg);
     } else if (obj.contains("id") &&
                obj.contains("button") &&
-               obj.contains("led")) {
+               obj.contains("led") &&
+               obj.contains("timestamp")) {
         int _id     = obj["id"].toInt();
         int _button = obj["button"].toInt();
         int _led    = obj["led"].toInt();
+        QString _ts = obj["timestamp"].toString();
 
         if (_id != id) {
             id = _id;
@@ -105,16 +106,10 @@ void PortMonitor::parseJSON(QByteArray &buffer)
             led = _led;
             emit ledChanged(led);
         }
-//        sText = QString::asprintf("%d", id);
-//        ui->msgIDLabel->setText(sText);
-//        sText = QString::asprintf("%s", (button == 1)?"Pressed":"Open");
-//        ui->msgButtonLabel->setText(sText);
-//        sText = QString::asprintf("%s", (led == 1)?"On":"Off");
-//        ui->msgLEDLabel->setText(sText);
-
-//        // update button enable according to LED status
-//        ui->LedOnButton->setEnabled(led == 0);
-//        ui->LedOffButton->setEnabled(led == 1);
+        if (_ts != timestamp) {
+            timestamp = _ts;
+            emit tsChanged(timestamp);
+        }
     } else {
         qDebug() << "Looks like invalid JSON to me!";
     }
@@ -204,4 +199,14 @@ qint32 PortMonitor::getButton() const
 qint32 PortMonitor::getLed() const
 {
     return led;
+}
+
+QString PortMonitor::getTimestamp() const
+{
+    return timestamp;
+}
+
+QString PortMonitor::getDeviceMsg() const
+{
+    return deviceMsg;
 }

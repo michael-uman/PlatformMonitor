@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -53,3 +53,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     frontend.rc \
     frontend.ico
+
+RESOURCES += \
+    frontend.qrc

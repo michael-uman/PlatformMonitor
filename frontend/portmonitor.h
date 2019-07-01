@@ -12,7 +12,8 @@ class PortMonitor : public QObject
     Q_PROPERTY(QString version READ getVersion NOTIFY versionChanged)
     Q_PROPERTY(qint32 button READ getButton NOTIFY buttonChanged)
     Q_PROPERTY(qint32 led READ getLed NOTIFY ledChanged)
-
+    Q_PROPERTY(QString timestamp READ getTimestamp NOTIFY tsChanged)
+    Q_PROPERTY(QString devicemsg READ getDeviceMsg NOTIFY deviceMsgChanged)
 
 public:
     explicit PortMonitor(QObject *parent = nullptr);
@@ -28,6 +29,8 @@ public:
     QString getVersion() const;
     qint32 getButton() const;
     qint32 getLed() const;
+    QString getTimestamp() const;
+    QString getDeviceMsg() const;
 
 signals:
     /**
@@ -61,6 +64,13 @@ signals:
      * @param led
      */
     void ledChanged(qint32 led);
+    /**
+     * @brief This signal is broadcast when the timestamp has changed.
+     * @param timestamp
+     */
+    void tsChanged(QString timestamp);
+
+    void deviceMsgChanged(QString message);
 
 public slots:
     void onDataReady();
@@ -76,6 +86,8 @@ private:
     qint32      button      = -1;
     qint32      led         = -1;
     QString     version     = "Unknown";
+    QString     timestamp   = "Unknown";
+    QString     deviceMsg;
 };
 
 #endif // PORTMONITOR_H
