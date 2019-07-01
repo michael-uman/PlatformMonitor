@@ -3,6 +3,7 @@
 #include <QList>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QTimer>
 #include "portmonitor.h"
 #include "commands.h"
@@ -28,15 +29,26 @@ PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
 
     if (serial_port->open(QIODevice::ReadWrite) == true) {
         qDebug() << "Serial port is open!";
+        ok = true;
     } else {
         qDebug() << "Serial port failed to open!";
     }
 
-    connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
-    // Wait 1/2 second and send a get version packet...
-    QTimer::singleShot(500, this, &PortMonitor::GetVersion);
+    if (ok) {
+        connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
+        // Wait 1/2 second and send a get version packet...
+        QTimer::singleShot(500, this, &PortMonitor::GetVersion);
+    }
 }
 
+bool PortMonitor::isOk() const
+{
+    return ok;
+}
+
+/**
+ * @brief Slot called when data is available to read from serial port
+ */
 void PortMonitor::onDataReady()
 {
     QByteArray data;
@@ -60,6 +72,53 @@ void PortMonitor::parseJSON(QByteArray &buffer)
         return;
     }
     emit msgReceived(doc);
+
+    QJsonObject obj = doc.object();
+    QString sText;
+
+    if (obj.contains("version")) {
+        sText = obj["version"].toString();
+        qDebug() << "Version : " << sText;
+        if (sText != version) {
+            version = sText;
+            emit versionChanged(version);
+        }
+    } else if (obj.contains("message")) {
+        sText = obj["message"].toString();
+        qDebug() << "DEVICE MSG : " << sText;
+    } else if (obj.contains("id") &&
+               obj.contains("button") &&
+               obj.contains("led")) {
+        int _id     = obj["id"].toInt();
+        int _button = obj["button"].toInt();
+        int _led    = obj["led"].toInt();
+
+        if (_id != id) {
+            id = _id;
+            emit idChanged(id);
+        }
+        if (_button != button) {
+            button = _button;
+            emit buttonChanged(button);
+        }
+        if (_led != led) {
+            led = _led;
+            emit ledChanged(led);
+        }
+//        sText = QString::asprintf("%d", id);
+//        ui->msgIDLabel->setText(sText);
+//        sText = QString::asprintf("%s", (button == 1)?"Pressed":"Open");
+//        ui->msgButtonLabel->setText(sText);
+//        sText = QString::asprintf("%s", (led == 1)?"On":"Off");
+//        ui->msgLEDLabel->setText(sText);
+
+//        // update button enable according to LED status
+//        ui->LedOnButton->setEnabled(led == 0);
+//        ui->LedOffButton->setEnabled(led == 1);
+    } else {
+        qDebug() << "Looks like invalid JSON to me!";
+    }
+
 }
 
 /**
@@ -80,12 +139,13 @@ void PortMonitor::DebugSerialPorts()
  */
 void PortMonitor::TurnLEDOn(uint32_t led)
 {
+    uint32_t ledMask = (1 << led);
     qDebug() << Q_FUNC_INFO;
 
     if (serial_port) {
         RECVCMD_t   cmd = {
             RECVCMD_LEDON,
-            led
+            ledMask
         };
         serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
         serial_port->flush();
@@ -98,12 +158,14 @@ void PortMonitor::TurnLEDOn(uint32_t led)
  */
 void PortMonitor::TurnLEDOff(uint32_t led)
 {
+    uint32_t ledMask = (1 << led);
+
     qDebug() << Q_FUNC_INFO;
 
     if (serial_port) {
         RECVCMD_t   cmd = {
             RECVCMD_LEDOFF,
-            led
+            ledMask
         };
         serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
         serial_port->flush();
@@ -122,4 +184,24 @@ void PortMonitor::GetVersion()
         serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
         serial_port->flush();
     }
+}
+
+qint32 PortMonitor::getId() const
+{
+    return id;
+}
+
+QString PortMonitor::getVersion() const
+{
+    return version;
+}
+
+qint32 PortMonitor::getButton() const
+{
+    return button;
+}
+
+qint32 PortMonitor::getLed() const
+{
+    return led;
 }

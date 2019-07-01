@@ -7,23 +7,75 @@
 class PortMonitor : public QObject
 {
     Q_OBJECT
+
+    Q_PROPERTY(qint32 id READ getId NOTIFY idChanged)
+    Q_PROPERTY(QString version READ getVersion NOTIFY versionChanged)
+    Q_PROPERTY(qint32 button READ getButton NOTIFY buttonChanged)
+    Q_PROPERTY(qint32 led READ getLed NOTIFY ledChanged)
+
+
 public:
     explicit PortMonitor(QObject *parent = nullptr);
+    bool isOk() const;
+
     static void DebugSerialPorts();
 
     void TurnLEDOn(uint32_t led);
     void TurnLEDOff(uint32_t led);
     void GetVersion();
 
+    qint32 getId() const;
+    QString getVersion() const;
+    qint32 getButton() const;
+    qint32 getLed() const;
+
 signals:
+    /**
+     * @brief This signal broadcasts the message received from the device.
+     * @param buffer QJsonDocument object reference of parsed buffer.
+     */
     void msgReceived(QJsonDocument & buffer);
+    /**
+     * @brief This signal is broadcast when the parsed message updates the id #.
+     * @param id The current id from the device.
+     */
+    void idChanged(qint32 id);
+    /**
+     * @brief This signal is broadcast when the version message is parsed and
+     * the version # changed.
+     *
+     * @param version Version string
+     */
+    void versionChanged(QString version);
+    /**
+     * @brief This signal is broadcast when update message indicates that the
+     * button state has changed.
+     *
+     * @param button
+     */
+    void buttonChanged(qint32 button);
+    /**
+     * @brief This signal is broadcast when update message indicates that the
+     * led state has changed.
+     *
+     * @param led
+     */
+    void ledChanged(qint32 led);
 
 public slots:
     void onDataReady();
 
+
 private:
     QSerialPort * serial_port = nullptr;
+    bool        ok          = false;
+
     void parseJSON(QByteArray & buffer);
+
+    qint32      id          = -1;
+    qint32      button      = -1;
+    qint32      led         = -1;
+    QString     version     = "Unknown";
 };
 
 #endif // PORTMONITOR_H

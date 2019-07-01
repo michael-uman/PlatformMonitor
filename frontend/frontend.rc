@@ -1,0 +1,5 @@
+/*
+    Resource file...
+*/
+
+IDI_ICON1               ICON    DISCARDABLE     "frontend.ico"
