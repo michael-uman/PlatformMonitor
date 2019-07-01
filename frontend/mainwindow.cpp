@@ -191,6 +191,6 @@ void MainWindow::on_actionAll_On_triggered()
 {
     for (uint32_t n = 0 ; n < 4 ; n++) {
         port_monitor->TurnLEDOn(n);
-        QThread::sleep(1);
+        QThread::usleep(200);
     }
 }

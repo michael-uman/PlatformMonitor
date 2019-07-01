@@ -136,91 +136,11 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   /* Alarm generation: Turn LED1 on */
 //  BSP_LED_On(LED1);
+//	osMutexAcquire(appContext.contextMutex, 0);
 	HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_SET);
+	appContext.led4 = 1;
+//	osMutexRelease(appContext.contextMutex);
 }
-
-#if 0
-
-/**
-  * @brief  Configure the current time and date.
-  * @param  None
-  * @retval None
-  */
-static void RTC_AlarmConfig(void)
-{
-//  RTC_DateTypeDef  sdatestructure;
-//  RTC_TimeTypeDef  stimestructure;
-  RTC_AlarmTypeDef salarmstructure;
-
-  /*##-1- Configure the RTC Alarm peripheral #################################*/
-  /* Set Alarm to 02:20:30
-     RTC Alarm Generation: Alarm on Hours, Minutes and Seconds */
-  salarmstructure.Alarm = RTC_ALARM_A;
-  salarmstructure.AlarmDateWeekDay = RTC_WEEKDAY_MONDAY;
-  salarmstructure.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  salarmstructure.AlarmMask =  RTC_ALARMMASK_SECONDS; //RTC_ALARMMASK_DATEWEEKDAY;
-  salarmstructure.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_None;
-  salarmstructure.AlarmTime.TimeFormat = RTC_HOURFORMAT12_AM;
-  salarmstructure.AlarmTime.Hours = 0x0;
-  salarmstructure.AlarmTime.Minutes = 0x0;
-  salarmstructure.AlarmTime.Seconds = 0x10;
-  salarmstructure.AlarmTime.SubSeconds = 0x00;
-
-  if(HAL_RTC_SetAlarm_IT(&hrtc,&salarmstructure,FORMAT_BCD) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
-
-//  /*##-2- Configure the Date #################################################*/
-//  /* Set Date: Tuesday February 18th 2014 */
-//  sdatestructure.Year 		= 0x14;
-//  sdatestructure.Month 		= RTC_MONTH_FEBRUARY;
-//  sdatestructure.Date 		= 0x18;
-//  sdatestructure.WeekDay 	= RTC_WEEKDAY_TUESDAY;
-//
-//  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,FORMAT_BCD) != HAL_OK)
-//  {
-//    /* Initialization Error */
-//    Error_Handler();
-//  }
-//
-//  /*##-3- Configure the Time #################################################*/
-//  /* Set Time: 02:20:00 */
-//  stimestructure.Hours = 0x02;
-//  stimestructure.Minutes = 0x20;
-//  stimestructure.Seconds = 0x00;
-//  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
-//  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
-//  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
-//
-//  if(HAL_RTC_SetTime(&hrtc,&stimestructure,FORMAT_BCD) != HAL_OK)
-//  {
-//    /* Initialization Error */
-//    Error_Handler();
-//  }
-}
-
-/**
-  * @brief  Display the current time.
-  * @param  showtime : pointer to buffer
-  * @retval None
-  */
-static void RTC_TimeShow(uint8_t* showtime)
-{
-  RTC_DateTypeDef sdatestructureget;
-  RTC_TimeTypeDef stimestructureget;
-
-  /* Get the RTC current Time */
-  HAL_RTC_GetTime(&hrtc, &stimestructureget, FORMAT_BIN);
-  /* Get the RTC current Date */
-  HAL_RTC_GetDate(&hrtc, &sdatestructureget, FORMAT_BIN);
-  /* Display time Format : hh:mm:ss */
-  snprintf((char*)showtime,128, "{ \"message\": \"%02d:%02d:%02d\" }\n",
-		  stimestructureget.Hours, stimestructureget.Minutes,
-		  stimestructureget.Seconds);
-}
-#endif // 0
 
 /* USER CODE END 0 */
 
@@ -257,6 +177,8 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
+  // Send a bunch of crs so if frontend is listening it will sync easily
+  print2Uart2("\n\n\n\n\n\n\n\n");
   /* USER CODE END 2 */
 
   osKernelInitialize(); // Initialize CMSIS-RTOS
@@ -322,7 +244,7 @@ int main(void)
   /* definition and creation of recvTask */
   const osThreadAttr_t recvTask_attributes = {
     .name = "recvTask",
-    .priority = (osPriority_t) osPriorityLow,
+    .priority = (osPriority_t) osPriorityRealtime,
     .stack_size = 256
   };
   recvTaskHandle = osThreadNew(startRecvTask, NULL, &recvTask_attributes);
@@ -330,6 +252,17 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
 	HAL_UART_Receive_IT(&huart2, (uint8_t*) &gRecvBuffer, sizeof(RECVCMD_t));
+
+	// Push out version packet...
+	{
+		SENDMSGQUEUE_OBJ_t	msg = {0};
+
+		msg.cmd = SENDCMD_VERSION;
+//		msg.count = 0;
+//		msg.buttonState = 0;
+
+		osMessageQueuePut(sendQueueHandle, &msg, 0, 0);
+	}
 
 	print2Uart2("{ \"message\": \"Starting kernel...\" }\n");
   /* USER CODE END RTOS_THREADS */
@@ -460,7 +393,6 @@ static void MX_RTC_Init(void)
     Error_Handler();
   }
 
-#if 0
   /** Enable the Alarm A 
   */
   sAlarm.AlarmTime.Hours = 0x0;
@@ -478,7 +410,6 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-#endif
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
@@ -668,13 +599,15 @@ void startRecvTask(void *argument)
 		RECVMSGQUEUE_OBJ_t msg;
 		osStatus_t status = osMessageQueueGet(recvQueueHandle, &msg, NULL, 0);
 		if (status == osOK) {
-			osMutexAcquire(appContext.contextMutex, 0);
-
+#if 0
+			HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+#endif
 			switch (msg.packet.cmd) {
 			case RECVCMD_HELLO:
 				break;
 			case RECVCMD_LEDON:
 				{
+					osMutexAcquire(appContext.contextMutex, 0);
 					if (IS_LED_SET(msg.packet.data, LED_ONE)) {
 						appContext.led1 = 1;
 						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
@@ -690,23 +623,28 @@ void startRecvTask(void *argument)
 					} else {
 
 					}
+					osMutexRelease(appContext.contextMutex);
 				}
 				break;
 			case RECVCMD_LEDOFF:
-				if (IS_LED_SET(msg.packet.data, LED_ONE)) {
-					appContext.led1 = 0;
-					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-				} else if (IS_LED_SET(msg.packet.data, LED_TWO)) {
-					appContext.led2 = 0;
-					HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-				} else if (IS_LED_SET(msg.packet.data, LED_THREE)) {
-					appContext.led3 = 0;
-					HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-				} else if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
-					appContext.led4 = 0;
-					HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
-				} else {
+				{
+					osMutexAcquire(appContext.contextMutex, 0);
+					if (IS_LED_SET(msg.packet.data, LED_ONE)) {
+						appContext.led1 = 0;
+						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+					} else if (IS_LED_SET(msg.packet.data, LED_TWO)) {
+						appContext.led2 = 0;
+						HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+					} else if (IS_LED_SET(msg.packet.data, LED_THREE)) {
+						appContext.led3 = 0;
+						HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+					} else if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
+						appContext.led4 = 0;
+						HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+					} else {
 
+					}
+					osMutexRelease(appContext.contextMutex);
 				}
 				break;
 			case RECVCMD_VERSION: {
@@ -722,13 +660,15 @@ void startRecvTask(void *argument)
 			case RECVCMD_END:
 				break;
 			}
-			osMutexRelease(appContext.contextMutex);
-			// Queue up another read from the UART peripheral
-			HAL_UART_Receive_IT(&huart2, (uint8_t*) &gRecvBuffer,
-					sizeof(RECVCMD_t));
+
+
+		} else {
 
 		}
-		osDelay(1);
+		// Queue up another read from the UART peripheral
+		HAL_UART_Receive_IT(&huart2, (uint8_t*) &gRecvBuffer,
+				sizeof(RECVCMD_t));
+		osDelay(10);
 	}
   /* USER CODE END startRecvTask */
 }
