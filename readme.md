@@ -66,3 +66,20 @@ The packets are described here:
     "version": <"x.x.x">
 }
 ```
+
+## FreeRTOS Micro-Controller Firmware
+
+The `MCU` firmware was developed using the `STM32CubeMX` package to generate the prototype project. This software was used to generate the skeleton code which initializes the STM32 peripherals.
+
+The firmware uses the `FreeRTOS` middleware package to provide multi-threaded application support. The firmware employs three threads working in synchrony to provide functions to the host User Interface code.
+
+The thread tasks are summarized below:
+
+* Periodic polling thread (`flashTask`)
+    * This thread is responsible for reading the status of the buttons and putting a message in the `send thread`'s message gueue.
+* Send thread (`uartTask`)
+    * This thread waits on a message queue. When it receives a message it looks at the message command and it sends the result data via the UART to the host. There are `status commands` and `version commands`.
+* Receive thread (`recvTask`)
+    * This thread issues a read from UART request which will be signalled by the interrupt when data is ready. When the IRQ handler receives the data it then copies the packet into a message queu and sends it to this thread which is waiting for a message. Then the command is parsed and the application state is updated.
+    
+
