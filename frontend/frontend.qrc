@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>switch-1.wav</file>
+        <file>resources/switch-1.wav</file>
     </qresource>
 </RCC>
