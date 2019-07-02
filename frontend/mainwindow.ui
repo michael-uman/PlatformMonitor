@@ -422,7 +422,14 @@
     <addaction name="actionReset_System"/>
     <addaction name="menuLED_Control"/>
    </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionSound_Enabled"/>
+   </widget>
    <addaction name="menuCommands"/>
+   <addaction name="menuOptions"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -447,10 +454,24 @@
    <property name="text">
     <string>All On</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
+   </property>
   </action>
   <action name="actionAll_Off">
    <property name="text">
     <string>All Off</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSound_Enabled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Sound Enabled</string>
    </property>
   </action>
  </widget>

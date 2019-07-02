@@ -45,15 +45,21 @@ private slots:
     void on_ledFourOff_clicked();
 
     void on_actionSet_RTC_triggered();
-
     void on_actionAll_On_triggered();
+    void on_actionAll_Off_triggered();
+
+    void on_actionSound_Enabled_toggled(bool arg1);
 
 private:
     bool                bOk             = false;
+    bool                bPlaySound      = false;
     bool                ledStateInit    = false;
     Ui::MainWindow *    ui              = nullptr;
     PortMonitor *       port_monitor    = nullptr;
     QSound *            switch_sound    = nullptr;
+
+    void                playsound(int soundId);
+
 };
 
 #endif // MAINWINDOW_H

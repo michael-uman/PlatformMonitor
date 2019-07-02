@@ -5,7 +5,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMessageBox>
-#include <QThread>
+//#include <QThread>
+#include <QSettings>
 #include <QDebug>
 #include "portmonitor.h"
 #include "commands.h"
@@ -18,8 +19,10 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    setWindowTitle(QString("Frontend V %1").arg("boob"));
+    QSettings   settings("wunderbar", "frontend");
+
     ui->setupUi(this);
+    setWindowTitle(QString("Frontend V %1").arg("1.0"));
 
     port_monitor = new PortMonitor();
 
@@ -42,6 +45,10 @@ MainWindow::MainWindow(QWidget *parent) :
         if (switch_sound == nullptr) {
             qDebug() << "ERROR: Unable to load sound!";
         }
+
+        bPlaySound = settings.value("soundenabled").toBool();
+
+        ui->actionSound_Enabled->setChecked(bPlaySound);
         bOk = true;
     } else {
         QMessageBox::critical(this, "Device Unavailable", "Unable to locate the device!");
@@ -51,6 +58,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    QSettings   settings("wunderbar", "frontend");
+
+    settings.setValue("soundenabled", QVariant::fromValue(bPlaySound));
+
     delete switch_sound;
     delete port_monitor;
     delete ui;
@@ -136,61 +147,83 @@ void MainWindow::onDeviceMsg(QString message)
 
 void MainWindow::on_ledOneOn_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOn(0);
 }
 
 void MainWindow::on_ledOneOff_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOff(0);
 }
 
 void MainWindow::on_ledTwoOn_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOn(1);
 }
 
 void MainWindow::on_ledTwoOff_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOff(1);
 }
 
 void MainWindow::on_ledThreeOn_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOn(2);
 }
 
 void MainWindow::on_ledThreeOff_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOff(2);
 }
 
 void MainWindow::on_ledFourOn_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOn(3);
 }
 
 void MainWindow::on_ledFourOff_clicked()
 {
-    switch_sound->play();
+    playsound(0);
     port_monitor->TurnLEDOff(3);
 }
 
 void MainWindow::on_actionSet_RTC_triggered()
 {
     qDebug() << "Set RTC";
+    port_monitor->SetCurrentTimeRTC();
 }
 
 void MainWindow::on_actionAll_On_triggered()
 {
-    for (uint32_t n = 0 ; n < 4 ; n++) {
-        port_monitor->TurnLEDOn(n);
-        QThread::usleep(200);
+    qDebug() << Q_FUNC_INFO;
+
+    playsound(0);
+    port_monitor->TurnAllLEDsOn();
+}
+
+void MainWindow::on_actionAll_Off_triggered()
+{
+    qDebug() << Q_FUNC_INFO;
+
+    playsound(0);
+    port_monitor->TurnAllLEDsOff();
+}
+
+void MainWindow::playsound(int soundId)
+{
+    Q_UNUSED(soundId)
+    if (bPlaySound) {
+        switch_sound->play();
     }
+}
+
+void MainWindow::on_actionSound_Enabled_toggled(bool arg1)
+{
+    bPlaySound = arg1;
 }

@@ -136,10 +136,10 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   /* Alarm generation: Turn LED1 on */
 //  BSP_LED_On(LED1);
-//	osMutexAcquire(appContext.contextMutex, 0);
-	HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_SET);
-	appContext.led4 = 1;
-//	osMutexRelease(appContext.contextMutex);
+	osMutexAcquire(appContext.contextMutex, 0);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	appContext.led1 = 1;
+	osMutexRelease(appContext.contextMutex);
 }
 
 /* USER CODE END 0 */
@@ -298,11 +298,10 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 16;
@@ -328,7 +327,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -392,7 +391,6 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-
   /** Enable the Alarm A 
   */
   sAlarm.AlarmTime.Hours = 0x0;
@@ -493,7 +491,27 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void setRTCClock(uint32_t bcdTime)
+{
+	RTC_TimeTypeDef sTime = {0};
 
+	uint8_t h = (bcdTime & 0xff0000) >> 16;
+	uint8_t m = (bcdTime & 0x00ff00) >> 8;
+	uint8_t s = (bcdTime & 0x0000ff);
+
+	/** Initialize RTC and set the Time and Date
+     */
+	sTime.Hours = h;
+	sTime.Minutes = m;
+	sTime.Seconds = s;
+	sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+	sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+
+	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_startFlashTask */
@@ -569,8 +587,8 @@ void startUartTask(void *argument)
 				break;
 			case SENDCMD_VERSION: {
 				snprintf(msgBuffer, sizeof(msgBuffer),
-						"{ \"version\": \"%d.%d.%d\" }\n",
-						FW_MAJOR_VERSION, FW_MINOR_VERSION, FW_VERSION_BUILD);
+						"{ \"name\": \"%s\", \"version\": \"%d.%d.%d\" }\n",
+						FW_NAME, FW_MAJOR_VERSION, FW_MINOR_VERSION, FW_VERSION_BUILD);
 				print2Uart2(msgBuffer);
 			}
 				break;
@@ -611,17 +629,18 @@ void startRecvTask(void *argument)
 					if (IS_LED_SET(msg.packet.data, LED_ONE)) {
 						appContext.led1 = 1;
 						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-					} else if (IS_LED_SET(msg.packet.data, LED_TWO)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_TWO)) {
 						appContext.led2 = 1;
 						HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-					} else if (IS_LED_SET(msg.packet.data, LED_THREE)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_THREE)) {
 						appContext.led3 = 1;
 						HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_SET);
-					} else if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
 						appContext.led4 = 1;
 						HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_SET);
-					} else {
-
 					}
 					osMutexRelease(appContext.contextMutex);
 				}
@@ -632,32 +651,38 @@ void startRecvTask(void *argument)
 					if (IS_LED_SET(msg.packet.data, LED_ONE)) {
 						appContext.led1 = 0;
 						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-					} else if (IS_LED_SET(msg.packet.data, LED_TWO)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_TWO)) {
 						appContext.led2 = 0;
 						HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-					} else if (IS_LED_SET(msg.packet.data, LED_THREE)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_THREE)) {
 						appContext.led3 = 0;
 						HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-					} else if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
+					}
+					if (IS_LED_SET(msg.packet.data, LED_FOUR)) {
 						appContext.led4 = 0;
 						HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
-					} else {
-
 					}
 					osMutexRelease(appContext.contextMutex);
 				}
 				break;
-			case RECVCMD_VERSION: {
-				SENDMSGQUEUE_OBJ_t msg = { 0 };
-				msg.cmd = SENDCMD_VERSION;
-				osStatus_t putStat = osMessageQueuePut(sendQueueHandle, &msg, 0,
-						0);
-				if (putStat != osOK) {
-					appContext.error = 1;
+			case RECVCMD_VERSION:
+				{
+					SENDMSGQUEUE_OBJ_t sendMsg = { 0 };
+					sendMsg.cmd = SENDCMD_VERSION;
+					osStatus_t putStat = osMessageQueuePut(sendQueueHandle, &sendMsg, 0,
+							0);
+					if (putStat != osOK) {
+						appContext.error = 1;
+					}
 				}
-			}
 				break;
-			case RECVCMD_END:
+			case RECVCMD_SETRTC:
+				// The packet data contains the current time in BCD format.
+				setRTCClock(msg.packet.data);
+				break;
+			default:
 				break;
 			}
 

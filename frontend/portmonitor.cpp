@@ -7,6 +7,7 @@
 #include <QTimer>
 #include "portmonitor.h"
 #include "commands.h"
+#include "bcdstuff.h"
 
 #if defined(Q_OS_WIN32)
     #define COMPORT "COM4"
@@ -39,6 +40,12 @@ PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
         // Wait 1/2 second and send a get version packet...
         QTimer::singleShot(1500, this, &PortMonitor::GetVersion);
     }
+}
+
+PortMonitor::~PortMonitor()
+{
+    serial_port->close();
+    delete serial_port;
 }
 
 bool PortMonitor::isOk() const
@@ -76,8 +83,8 @@ void PortMonitor::parseJSON(QByteArray &buffer)
     QJsonObject obj = doc.object();
     QString sText;
 
-    if (obj.contains("version")) {
-        sText = obj["version"].toString();
+    if (obj.contains("version") && obj.contains("name")) {
+        sText = obj["name"].toString() + " " + obj["version"].toString();
         if (sText != version) {
             version = sText;
             emit versionChanged(version);
@@ -167,6 +174,39 @@ void PortMonitor::TurnLEDOff(uint32_t led)
     }
 }
 
+void PortMonitor::TurnAllLEDsOn()
+{
+    uint32_t ledMask = LED_ONE | LED_TWO | LED_THREE | LED_FOUR;
+
+    qDebug() << Q_FUNC_INFO;
+
+    if (serial_port) {
+        RECVCMD_t   cmd = {
+            RECVCMD_LEDON,
+            ledMask
+        };
+        serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
+        serial_port->flush();
+    }
+}
+
+void PortMonitor::TurnAllLEDsOff()
+{
+    uint32_t ledMask = LED_ONE | LED_TWO | LED_THREE | LED_FOUR;
+
+
+    qDebug() << Q_FUNC_INFO;
+
+    if (serial_port) {
+        RECVCMD_t   cmd = {
+            RECVCMD_LEDOFF,
+            ledMask
+        };
+        serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
+        serial_port->flush();
+    }
+}
+
 void PortMonitor::GetVersion()
 {
     qDebug() << Q_FUNC_INFO;
@@ -179,6 +219,24 @@ void PortMonitor::GetVersion()
         serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
         serial_port->flush();
     }
+}
+
+void PortMonitor::SetCurrentTimeRTC()
+{
+    QDateTime currentDT = QDateTime::currentDateTime();
+    QTime     currentTime = currentDT.time();
+
+    RECVCMD_t cmd;
+
+    uint8_t hBCD = decimal_to_bcd(static_cast<uint8_t>(currentTime.hour()));
+    uint8_t mBCD = decimal_to_bcd(static_cast<uint8_t>(currentTime.minute()));
+    uint8_t sBCD = decimal_to_bcd(static_cast<uint8_t>(currentTime.second()));
+
+    cmd.cmd  = RECVCMD_SETRTC;
+    cmd.data = static_cast<uint32_t>(hBCD << 16) | static_cast<uint32_t>(mBCD << 8) | static_cast<uint32_t>(sBCD);
+
+    serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
+    serial_port->flush();
 }
 
 qint32 PortMonitor::getId() const

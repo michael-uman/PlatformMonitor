@@ -25,10 +25,11 @@ typedef enum {
  */
 typedef enum {
 	RECVCMD_START = 0x0080,
-	RECVCMD_HELLO = RECVCMD_START,
-	RECVCMD_LEDON,
-	RECVCMD_LEDOFF,
-	RECVCMD_VERSION,
+	RECVCMD_HELLO = RECVCMD_START,	// Say Hello (not implemented)
+	RECVCMD_LEDON,					// Turn on LED's
+	RECVCMD_LEDOFF,					// Turn off LED's
+	RECVCMD_VERSION,				// Send back the FW version
+	RECVCMD_SETRTC,					// Set the RTC
 	RECVCMD_END,
 } eRECVCMD;
 

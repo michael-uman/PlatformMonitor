@@ -17,13 +17,20 @@ class PortMonitor : public QObject
 
 public:
     explicit PortMonitor(QObject *parent = nullptr);
+    virtual ~PortMonitor();
+
     bool isOk() const;
 
     static void DebugSerialPorts();
 
     void TurnLEDOn(uint32_t led);
     void TurnLEDOff(uint32_t led);
+    void TurnAllLEDsOn();
+    void TurnAllLEDsOff();
+
     void GetVersion();
+
+    void SetCurrentTimeRTC();
 
     qint32 getId() const;
     QString getVersion() const;

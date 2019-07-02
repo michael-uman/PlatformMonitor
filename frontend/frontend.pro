@@ -28,20 +28,22 @@ INCLUDEPATH += \
     ../STM32-TrueStudio-FreeRTOS/Src
 
 SOURCES += \
+        bcdstuff.cpp \
         main.cpp \
         mainwindow.cpp \
         portmonitor.cpp
 
 HEADERS += \
+        bcdstuff.h \
         mainwindow.h \
         portmonitor.h
 
 FORMS += \
         mainwindow.ui
 
-win32 {
-    RC_FILE = frontend.rc
-}
+#win32 {
+#    RC_FILE = frontend.rc
+#}
 
 CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT
 
