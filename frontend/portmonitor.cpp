@@ -22,23 +22,29 @@
  */
 PortMonitor::PortMonitor(QObject *parent) : QObject(parent)
 {
-    serial_port = new QSerialPort(COMPORT);
-    serial_port->setBaudRate(115200);
-    serial_port->setDataBits(QSerialPort::Data8);
-    serial_port->setStopBits(QSerialPort::OneStop);
-    serial_port->setParity(QSerialPort::NoParity);
 
-    if (serial_port->open(QIODevice::ReadWrite) == true) {
-        qDebug() << "Serial port is open!";
-        ok = true;
+    port_name = GetDevicePort();
+    if (!port_name.isEmpty()) {
+        serial_port = new QSerialPort(port_name);
+        serial_port->setBaudRate(115200);
+        serial_port->setDataBits(QSerialPort::Data8);
+        serial_port->setStopBits(QSerialPort::OneStop);
+        serial_port->setParity(QSerialPort::NoParity);
+
+        if (serial_port->open(QIODevice::ReadWrite) == true) {
+            qDebug() << "Serial port is open!";
+            ok = true;
+        } else {
+            qDebug() << "Serial port failed to open!";
+        }
+
+        if (ok) {
+            connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
+            // Wait 1/2 second and send a get version packet...
+            QTimer::singleShot(1500, this, &PortMonitor::GetVersion);
+        }
     } else {
-        qDebug() << "Serial port failed to open!";
-    }
-
-    if (ok) {
-        connect(serial_port, SIGNAL(readyRead()), this, SLOT(onDataReady()));
-        // Wait 1/2 second and send a get version packet...
-        QTimer::singleShot(1500, this, &PortMonitor::GetVersion);
+        qDebug() << "Unable to find device!";
     }
 }
 
@@ -135,6 +141,21 @@ void PortMonitor::DebugSerialPorts()
     }
 }
 
+
+QString PortMonitor::GetDevicePort()
+{
+    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
+
+    for (auto serport : ports) {
+        if ((serport.manufacturer() == "STMicroelectronics") &&
+            (serport.productIdentifier() == 14155))
+        {
+            return serport.portName();
+        }
+    }
+
+    return QString("");
+}
 /**
  * @brief Send the command to turn a LED on.
  * @param led - LED # to turn on

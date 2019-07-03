@@ -22,6 +22,7 @@ public:
     bool isOk() const;
 
     static void DebugSerialPorts();
+    QString GetDevicePort();
 
     void TurnLEDOn(uint32_t led);
     void TurnLEDOff(uint32_t led);
@@ -85,6 +86,7 @@ public slots:
 
 
 private:
+    QString     port_name;
     QSerialPort * serial_port = nullptr;
     bool        ok          = false;
 
