@@ -27,6 +27,7 @@ public:
     void TurnLEDOff(uint32_t led);
     void TurnAllLEDsOn();
     void TurnAllLEDsOff();
+    void SystemReset();
 
     void GetVersion();
 

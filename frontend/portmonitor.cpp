@@ -268,3 +268,13 @@ QString PortMonitor::getDeviceMsg() const
 {
     return deviceMsg;
 }
+
+void PortMonitor::SystemReset()
+{
+    RECVCMD_t   cmd = {
+        RECVCMD_RESET,
+        0
+    };
+    serial_port->write(reinterpret_cast<const char*>(&cmd), sizeof(cmd));
+    serial_port->flush();
+}

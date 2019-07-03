@@ -50,6 +50,12 @@ private slots:
 
     void on_actionSound_Enabled_toggled(bool arg1);
 
+    void on_actionExit_triggered();
+
+    void on_actionReset_System_triggered();
+
+    void on_actionSet_Alarm_triggered();
+
 private:
     bool                bOk             = false;
     bool                bPlaySound      = false;

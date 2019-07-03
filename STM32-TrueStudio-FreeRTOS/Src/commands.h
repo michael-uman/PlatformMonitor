@@ -30,6 +30,7 @@ typedef enum {
 	RECVCMD_LEDOFF,					// Turn off LED's
 	RECVCMD_VERSION,				// Send back the FW version
 	RECVCMD_SETRTC,					// Set the RTC
+	RECVCMD_RESET,					// Reset the device
 	RECVCMD_END,
 } eRECVCMD;
 

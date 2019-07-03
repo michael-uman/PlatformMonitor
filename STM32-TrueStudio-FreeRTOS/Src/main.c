@@ -142,6 +142,54 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 	osMutexRelease(appContext.contextMutex);
 }
 
+static void setRTCClock(uint32_t bcdTime)
+{
+	RTC_TimeTypeDef sTime = {0};
+
+	uint8_t h = (bcdTime & 0xff0000) >> 16;
+	uint8_t m = (bcdTime & 0x00ff00) >> 8;
+	uint8_t s = (bcdTime & 0x0000ff);
+
+	/** Initialize RTC and set the Time and Date
+     */
+	sTime.Hours = h;
+	sTime.Minutes = m;
+	sTime.Seconds = s;
+	sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+	sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+
+	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+static void setRTCAlarm(uint32_t bcdTime)
+{
+	RTC_AlarmTypeDef sAlarm = {0};
+
+	uint8_t h = (bcdTime & 0xff0000) >> 16;
+	uint8_t m = (bcdTime & 0x00ff00) >> 8;
+	uint8_t s = (bcdTime & 0x0000ff);
+
+	/** Enable the Alarm A
+	*/
+	sAlarm.AlarmTime.Hours = h;
+	sAlarm.AlarmTime.Minutes = m;
+	sAlarm.AlarmTime.Seconds = s;
+	sAlarm.AlarmTime.SubSeconds = 0x0;
+	sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+	sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+	sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+	sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+	sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+	sAlarm.AlarmDateWeekDay = 0x1;
+	sAlarm.Alarm = RTC_ALARM_A;
+	if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+	{
+	  Error_Handler();
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -176,7 +224,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
-
+  setRTCAlarm(0x00000010);
   // Send a bunch of crs so if frontend is listening it will sync easily
   print2Uart2("\n\n\n\n\n\n\n\n");
   /* USER CODE END 2 */
@@ -348,7 +396,7 @@ static void MX_RTC_Init(void)
 
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
-  RTC_AlarmTypeDef sAlarm = {0};
+//  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -391,23 +439,23 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-  /** Enable the Alarm A 
-  */
-  sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
-  sAlarm.AlarmTime.Seconds = 0x15;
-  sAlarm.AlarmTime.SubSeconds = 0x0;
-  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 0x1;
-  sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
+//  /** Enable the Alarm A
+//  */
+//  sAlarm.AlarmTime.Hours = 0x0;
+//  sAlarm.AlarmTime.Minutes = 0x0;
+//  sAlarm.AlarmTime.Seconds = 0x15;
+//  sAlarm.AlarmTime.SubSeconds = 0x0;
+//  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+//  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+//  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+//  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+//  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+//  sAlarm.AlarmDateWeekDay = 0x1;
+//  sAlarm.Alarm = RTC_ALARM_A;
+//  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
@@ -491,27 +539,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void setRTCClock(uint32_t bcdTime)
-{
-	RTC_TimeTypeDef sTime = {0};
 
-	uint8_t h = (bcdTime & 0xff0000) >> 16;
-	uint8_t m = (bcdTime & 0x00ff00) >> 8;
-	uint8_t s = (bcdTime & 0x0000ff);
-
-	/** Initialize RTC and set the Time and Date
-     */
-	sTime.Hours = h;
-	sTime.Minutes = m;
-	sTime.Seconds = s;
-	sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-	sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-
-	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-	{
-		Error_Handler();
-	}
-}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_startFlashTask */
@@ -682,6 +710,8 @@ void startRecvTask(void *argument)
 				// The packet data contains the current time in BCD format.
 				setRTCClock(msg.packet.data);
 				break;
+			case RECVCMD_RESET:
+				NVIC_SystemReset();
 			default:
 				break;
 			}

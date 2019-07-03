@@ -5,7 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMessageBox>
-//#include <QThread>
+#include <QTime>
 #include <QSettings>
 #include <QDebug>
 #include "portmonitor.h"
@@ -41,12 +41,12 @@ MainWindow::MainWindow(QWidget *parent) :
                 this, SLOT(onDeviceMsg(QString)));
 
         // The switch sound is in the Qt Resource file
-        switch_sound = new QSound(":/switch-1.wav");
-        if (switch_sound == nullptr) {
-            qDebug() << "ERROR: Unable to load sound!";
-        }
+        switch_sound = new QSound(":/resources/switch-1.wav");
+//        if (switch_sound == nullptr) {
+//            qDebug() << "ERROR: Unable to load sound!";
+//        }
 
-        bPlaySound = settings.value("soundenabled").toBool();
+        bPlaySound = settings.value("soundenabled", true).toBool();
 
         ui->actionSound_Enabled->setChecked(bPlaySound);
         bOk = true;
@@ -60,6 +60,7 @@ MainWindow::~MainWindow()
 {
     QSettings   settings("wunderbar", "frontend");
 
+    // Save the sound setting...
     settings.setValue("soundenabled", QVariant::fromValue(bPlaySound));
 
     delete switch_sound;
@@ -226,4 +227,27 @@ void MainWindow::playsound(int soundId)
 void MainWindow::on_actionSound_Enabled_toggled(bool arg1)
 {
     bPlaySound = arg1;
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    QApplication::quit();
+}
+
+void MainWindow::on_actionReset_System_triggered()
+{
+    if (QMessageBox::warning(this, "Verify Reset",
+                             "Are you absolutely sure you want to reset the device?",
+                             QMessageBox::Ok|QMessageBox::Cancel) == QMessageBox::Ok)
+    {
+        port_monitor->SystemReset();
+    }
+}
+
+void MainWindow::on_actionSet_Alarm_triggered()
+{
+    QString ts = port_monitor->getTimestamp();
+    QTime  time = QTime::fromString(ts, "hh:mm:ss");
+    qDebug() << time;
+
 }

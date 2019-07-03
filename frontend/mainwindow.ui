@@ -182,7 +182,7 @@
        <x>10</x>
        <y>20</y>
        <width>99</width>
-       <height>53</height>
+       <height>54</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -233,7 +233,7 @@
        <x>10</x>
        <y>20</y>
        <width>99</width>
-       <height>53</height>
+       <height>54</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -284,7 +284,7 @@
        <x>10</x>
        <y>20</y>
        <width>99</width>
-       <height>53</height>
+       <height>54</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -335,7 +335,7 @@
        <x>10</x>
        <y>20</y>
        <width>99</width>
-       <height>53</height>
+       <height>54</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -389,12 +389,12 @@
      <rect>
       <x>60</x>
       <y>320</y>
-      <width>61</width>
-      <height>16</height>
+      <width>101</width>
+      <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Device Log</string>
+     <string>Device Log :</string>
     </property>
    </widget>
   </widget>
@@ -404,7 +404,7 @@
      <x>0</x>
      <y>0</y>
      <width>638</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -420,7 +420,10 @@
     </widget>
     <addaction name="actionSet_RTC"/>
     <addaction name="actionReset_System"/>
+    <addaction name="actionSet_Alarm"/>
     <addaction name="menuLED_Control"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuOptions">
     <property name="title">
@@ -472,6 +475,19 @@
    </property>
    <property name="text">
     <string>Sound Enabled</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+X</string>
+   </property>
+  </action>
+  <action name="actionSet_Alarm">
+   <property name="text">
+    <string>Set Alarm</string>
    </property>
   </action>
  </widget>
